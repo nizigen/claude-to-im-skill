@@ -23,6 +23,20 @@ export interface Config {
   discordAllowedUsers?: string[];
   discordAllowedChannels?: string[];
   discordAllowedGuilds?: string[];
+  // WeChat Work (企业微信)
+  weworkCorpId?: string;
+  weworkCorpSecret?: string;
+  weworkAgentId?: string;
+  weworkToken?: string;
+  weworkEncodingAESKey?: string;
+  weworkCallbackPort?: number;
+  weworkCallbackHost?: string;
+  weworkAllowedUsers?: string[];
+  // QQ Bot (QQ 官方机器人)
+  qqAppId?: string;
+  qqAppSecret?: string;
+  qqSandbox?: boolean;
+  qqAllowedUsers?: string[];
   // Auto-approve all tool permission requests without user confirmation
   autoApprove?: boolean;
 }
@@ -101,6 +115,18 @@ export function loadConfig(): Config {
       env.get("CTI_DISCORD_ALLOWED_CHANNELS")
     ),
     discordAllowedGuilds: splitCsv(env.get("CTI_DISCORD_ALLOWED_GUILDS")),
+    weworkCorpId: env.get("CTI_WEWORK_CORPID") || undefined,
+    weworkCorpSecret: env.get("CTI_WEWORK_CORPSECRET") || undefined,
+    weworkAgentId: env.get("CTI_WEWORK_AGENTID") || undefined,
+    weworkToken: env.get("CTI_WEWORK_TOKEN") || undefined,
+    weworkEncodingAESKey: env.get("CTI_WEWORK_ENCODING_AES_KEY") || undefined,
+    weworkCallbackPort: parseInt(env.get("CTI_WEWORK_CALLBACK_PORT") || '', 10) || undefined,
+    weworkCallbackHost: env.get("CTI_WEWORK_CALLBACK_HOST") || undefined,
+    weworkAllowedUsers: splitCsv(env.get("CTI_WEWORK_ALLOWED_USERS")),
+    qqAppId: env.get("CTI_QQ_APP_ID") || undefined,
+    qqAppSecret: env.get("CTI_QQ_APP_SECRET") || undefined,
+    qqSandbox: env.get("CTI_QQ_SANDBOX") === "true",
+    qqAllowedUsers: splitCsv(env.get("CTI_QQ_ALLOWED_USERS")),
     autoApprove: env.get("CTI_AUTO_APPROVE") === "true",
   };
 }
@@ -146,6 +172,24 @@ export function saveConfig(config: Config): void {
   out += formatEnvLine(
     "CTI_DISCORD_ALLOWED_GUILDS",
     config.discordAllowedGuilds?.join(",")
+  );
+  out += formatEnvLine("CTI_WEWORK_CORPID", config.weworkCorpId);
+  out += formatEnvLine("CTI_WEWORK_CORPSECRET", config.weworkCorpSecret);
+  out += formatEnvLine("CTI_WEWORK_AGENTID", config.weworkAgentId);
+  out += formatEnvLine("CTI_WEWORK_TOKEN", config.weworkToken);
+  out += formatEnvLine("CTI_WEWORK_ENCODING_AES_KEY", config.weworkEncodingAESKey);
+  if (config.weworkCallbackPort) out += formatEnvLine("CTI_WEWORK_CALLBACK_PORT", String(config.weworkCallbackPort));
+  if (config.weworkCallbackHost) out += formatEnvLine("CTI_WEWORK_CALLBACK_HOST", config.weworkCallbackHost);
+  out += formatEnvLine(
+    "CTI_WEWORK_ALLOWED_USERS",
+    config.weworkAllowedUsers?.join(",")
+  );
+  out += formatEnvLine("CTI_QQ_APP_ID", config.qqAppId);
+  out += formatEnvLine("CTI_QQ_APP_SECRET", config.qqAppSecret);
+  if (config.qqSandbox) out += formatEnvLine("CTI_QQ_SANDBOX", "true");
+  out += formatEnvLine(
+    "CTI_QQ_ALLOWED_USERS",
+    config.qqAllowedUsers?.join(",")
   );
 
   fs.mkdirSync(CTI_HOME, { recursive: true });
@@ -211,6 +255,36 @@ export function configToSettings(config: Config): Map<string, string> {
   if (config.feishuDomain) m.set("bridge_feishu_domain", config.feishuDomain);
   if (config.feishuAllowedUsers)
     m.set("bridge_feishu_allowed_users", config.feishuAllowedUsers.join(","));
+
+  // ── WeChat Work ──
+  m.set(
+    "bridge_wework_enabled",
+    config.enabledChannels.includes("wework") ? "true" : "false"
+  );
+  if (config.weworkCorpId) m.set("bridge_wework_corpid", config.weworkCorpId);
+  if (config.weworkCorpSecret)
+    m.set("bridge_wework_corpsecret", config.weworkCorpSecret);
+  if (config.weworkAgentId) m.set("bridge_wework_agentid", config.weworkAgentId);
+  if (config.weworkToken) m.set("bridge_wework_token", config.weworkToken);
+  if (config.weworkEncodingAESKey)
+    m.set("bridge_wework_encoding_aes_key", config.weworkEncodingAESKey);
+  if (config.weworkCallbackPort)
+    m.set("bridge_wework_callback_port", String(config.weworkCallbackPort));
+  if (config.weworkCallbackHost)
+    m.set("bridge_wework_callback_host", config.weworkCallbackHost);
+  if (config.weworkAllowedUsers)
+    m.set("bridge_wework_allowed_users", config.weworkAllowedUsers.join(","));
+
+  // ── QQ Bot ──
+  m.set(
+    "bridge_qq_enabled",
+    config.enabledChannels.includes("qq") ? "true" : "false"
+  );
+  if (config.qqAppId) m.set("bridge_qq_app_id", config.qqAppId);
+  if (config.qqAppSecret) m.set("bridge_qq_app_secret", config.qqAppSecret);
+  if (config.qqSandbox) m.set("bridge_qq_sandbox", "true");
+  if (config.qqAllowedUsers)
+    m.set("bridge_qq_allowed_users", config.qqAllowedUsers.join(","));
 
   // ── Defaults ──
   // Upstream keys: bridge_default_work_dir, bridge_default_model, default_model

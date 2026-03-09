@@ -1,6 +1,6 @@
 # Claude-to-IM Skill
 
-将 Claude Code / Codex 桥接到 IM 平台 —— 在 Telegram、Discord 或飞书中与 AI 编程代理对话。
+将 Claude Code / Codex 桥接到 IM 平台 —— 在 Telegram、Discord、飞书、企业微信或 QQ 中与 AI 编程代理对话。
 
 [English](README.md)
 
@@ -13,7 +13,7 @@
 本 Skill 运行一个后台守护进程，将你的 IM 机器人连接到 Claude Code 或 Codex 会话。来自 IM 的消息被转发给 AI 编程代理，响应（包括工具调用、权限请求、流式预览）会发回到聊天中。
 
 ```
-你 (Telegram/Discord/飞书)
+你 (Telegram/Discord/飞书/企业微信/QQ)
   ↕ Bot API
 后台守护进程 (Node.js)
   ↕ Claude Agent SDK 或 Codex SDK（通过 CTI_RUNTIME 配置）
@@ -22,7 +22,7 @@ Claude Code / Codex → 读写你的代码库
 
 ## 功能特点
 
-- **三大 IM 平台** — Telegram、Discord、飞书，可任意组合启用
+- **五大 IM 平台** — Telegram、Discord、飞书、企业微信、QQ 官方机器人，可任意组合启用
 - **交互式配置** — 引导式向导逐步收集 token，附带详细获取说明
 - **权限控制** — 工具调用需要在聊天中通过内联按钮明确批准
 - **流式预览** — 实时查看 Claude 的输出（Telegram 和 Discord 支持）
@@ -97,7 +97,7 @@ bash ~/code/Claude-to-IM-skill/scripts/install-codex.sh --link
 
 向导会引导你完成以下步骤：
 
-1. **选择渠道** — 选择 Telegram、Discord、飞书，或任意组合
+1. **选择渠道** — 选择 Telegram、Discord、飞书、企业微信、QQ，或任意组合
 2. **输入凭据** — 向导会详细说明如何获取每个 token、需要开启哪些设置、授予哪些权限
 3. **设置默认值** — 工作目录、模型、模式
 4. **验证** — 立即通过平台 API 验证 token 有效性
@@ -158,6 +158,21 @@ bash ~/code/Claude-to-IM-skill/scripts/install-codex.sh --link
 5. **事件与回调**：选择**长连接**作为事件订阅方式 → 添加 `im.message.receive_v1` 事件
 6. **发布**：进入"版本管理与发布" → 创建版本 → 提交审核 → 在管理后台审核通过
 7. **注意**：版本审核通过并发布后机器人才能使用
+
+### 企业微信
+
+1. 登录[企业微信管理后台](https://work.weixin.qq.com/wework_admin/frame#apps) → 自建应用 → 创建应用
+2. 获取 **企业ID**（在"我的企业"页面）、**AgentId** 和 **Secret**（在应用详情页）
+3. 在"接收消息"中 → "设置API接收" → 复制 **Token** 和 **EncodingAESKey**
+4. 将回调 URL 指向守护进程的 HTTP 服务器（默认 `http://localhost:8788`）
+5. 使用 ngrok/cloudflare tunnel 暴露本地服务器：`ngrok http 8788`
+
+### QQ 官方机器人
+
+1. 前往 [QQ 开放平台](https://q.qq.com/) → 创建机器人 → 等待审核
+2. 在"开发设置"中获取 **AppID** 和 **AppSecret**
+3. 启用消息事件订阅：GROUP_AT_MESSAGE_CREATE、C2C_MESSAGE_CREATE
+4. 开发阶段使用沙箱模式（`CTI_QQ_SANDBOX=true`），机器人审核通过后切换到生产模式
 
 ## 架构
 
@@ -227,7 +242,7 @@ bash ~/code/Claude-to-IM-skill/scripts/install-codex.sh --link
 - 所有凭据存储在 `~/.claude-to-im/config.env`，权限 `chmod 600`
 - 日志输出中 token 自动脱敏（基于正则匹配）
 - 允许用户/频道/服务器列表限制谁可以与机器人交互
-- 守护进程是本地进程，没有入站网络监听
+- 守护进程是本地进程，没有入站网络监听（企业微信 adapter 除外，它会在 localhost 上运行回调 HTTP 服务器）
 - 详见 [SECURITY.md](SECURITY.md) 了解威胁模型和应急响应
 
 ## 开发

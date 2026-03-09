@@ -1,6 +1,6 @@
 # Claude-to-IM Skill
 
-Bridge Claude Code / Codex to IM platforms — chat with AI coding agents from Telegram, Discord, or Feishu/Lark.
+Bridge Claude Code / Codex to IM platforms — chat with AI coding agents from Telegram, Discord, Feishu/Lark, WeChat Work, or QQ.
 
 [中文文档](README_CN.md)
 
@@ -13,7 +13,7 @@ Bridge Claude Code / Codex to IM platforms — chat with AI coding agents from T
 This skill runs a background daemon that connects your IM bots to Claude Code or Codex sessions. Messages from IM are forwarded to the AI coding agent, and responses (including tool use, permission requests, streaming previews) are sent back to your chat.
 
 ```
-You (Telegram/Discord/Feishu)
+You (Telegram/Discord/Feishu/WeChat Work/QQ)
   ↕ Bot API
 Background Daemon (Node.js)
   ↕ Claude Agent SDK or Codex SDK (configurable via CTI_RUNTIME)
@@ -22,7 +22,7 @@ Claude Code / Codex → reads/writes your codebase
 
 ## Features
 
-- **Three IM platforms** — Telegram, Discord, Feishu/Lark, enable any combination
+- **Five IM platforms** — Telegram, Discord, Feishu/Lark, WeChat Work, QQ Bot — enable any combination
 - **Interactive setup** — guided wizard collects tokens with step-by-step instructions
 - **Permission control** — tool calls require explicit approval via inline buttons in chat
 - **Streaming preview** — see Claude's response as it types (Telegram & Discord)
@@ -97,7 +97,7 @@ bash ~/code/Claude-to-IM-skill/scripts/install-codex.sh --link
 
 The wizard will guide you through:
 
-1. **Choose channels** — pick Telegram, Discord, Feishu, or any combination
+1. **Choose channels** — pick Telegram, Discord, Feishu, WeChat Work, QQ, or any combination
 2. **Enter credentials** — the wizard explains exactly where to get each token, which settings to enable, and what permissions to grant
 3. **Set defaults** — working directory, model, and mode
 4. **Validate** — tokens are verified against platform APIs immediately
@@ -158,6 +158,21 @@ The `setup` wizard provides inline guidance for every step. Here's a summary:
 5. **Events & Callbacks**: select **"Long Connection"** as event dispatch method → add `im.message.receive_v1` event
 6. **Publish**: go to "Version Management & Release" → create version → submit for review → approve in Admin Console
 7. **Important**: The bot will NOT work until the version is approved and published
+
+### WeChat Work (企业微信)
+
+1. Log in to [WeChat Work Admin Console](https://work.weixin.qq.com/wework_admin/frame#apps) → Self-built → Create App
+2. Get **Corp ID** (in "My Enterprise"), **AgentId** and **Secret** (on app detail page)
+3. Under "Receive Messages" → "Set API Receive" → copy **Token** and **EncodingAESKey**
+4. Set the callback URL to point to the daemon's HTTP server (default `http://localhost:8788`)
+5. Use ngrok/cloudflare tunnel to expose the local server: `ngrok http 8788`
+
+### QQ Bot (QQ 官方机器人)
+
+1. Go to [QQ Open Platform](https://q.qq.com/) → Create Bot → wait for approval
+2. Under "Development Settings" get **AppID** and **AppSecret**
+3. Enable event subscriptions: GROUP_AT_MESSAGE_CREATE, C2C_MESSAGE_CREATE
+4. Use sandbox mode (`CTI_QQ_SANDBOX=true`) during development, switch to production after bot review
 
 ## Architecture
 
@@ -227,7 +242,7 @@ See [references/troubleshooting.md](references/troubleshooting.md) for more deta
 - All credentials stored in `~/.claude-to-im/config.env` with `chmod 600`
 - Tokens are automatically redacted in all log output (pattern-based masking)
 - Allowed user/channel/guild lists restrict who can interact with the bot
-- The daemon is a local process with no inbound network listeners
+- The daemon is a local process with no inbound network listeners (except WeChat Work adapter, which runs a callback HTTP server on localhost)
 - See [SECURITY.md](SECURITY.md) for threat model and incident response
 
 ## Development

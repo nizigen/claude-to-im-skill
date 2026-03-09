@@ -178,3 +178,92 @@ Leave empty to use the default Feishu domain.
 Feishu user IDs (open_id format like `ou_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`).
 You can find them in the Feishu Admin Console under user profiles.
 Leave empty to allow all users who can message the bot.
+
+---
+
+## WeChat Work (企业微信)
+
+### Corp ID, Corp Secret, Agent ID
+
+**How to create a WeChat Work custom app and get credentials:**
+1. Log in to [WeChat Work Admin Console](https://work.weixin.qq.com/wework_admin/frame#apps)
+2. Go to **"Applications"** (应用管理) → **"Self-built"** (自建) → **"Create App"** (创建应用)
+3. Fill in app name, description, and upload a logo → click **"Create"**
+4. On the app detail page, find:
+   - **AgentId** — the numeric ID shown on the app info page
+   - **Secret** — click to reveal and copy (this is the Corp Secret for this app)
+5. Go to **"My Enterprise"** (我的企业) at the bottom of the sidebar → find:
+   - **Corp ID** (企业ID) — shown at the bottom of the page
+
+### Callback Token and EncodingAESKey
+
+**How to configure the message callback:**
+1. On the app detail page, scroll down to **"Receive Messages"** (接收消息)
+2. Click **"Set API Receive"** (设置API接收)
+3. You'll see:
+   - **URL** — enter the callback URL pointing to your daemon (e.g., `https://your-domain.com/callback` or via ngrok tunnel)
+   - **Token** — auto-generated, copy it
+   - **EncodingAESKey** — auto-generated (43 characters), copy it
+4. Click **"Save"** — WeChat Work will verify the URL by sending a GET request
+
+**Important:** The daemon runs an HTTP callback server (default port 8788, bound to 127.0.0.1). You need to expose it via:
+- **ngrok**: `ngrok http 8788` → use the generated URL as callback URL
+- **Cloudflare Tunnel**: `cloudflared tunnel --url http://localhost:8788`
+- **Reverse proxy**: configure nginx/caddy to proxy to localhost:8788
+
+### Callback Port and Host (optional)
+
+- **Port**: default `8788`. Change if there's a conflict.
+- **Host**: default `127.0.0.1` (localhost only). Set to `0.0.0.0` only if directly exposed without a reverse proxy (not recommended).
+
+### Allowed User IDs (optional)
+
+WeChat Work user IDs (the UserID set in the admin console, e.g., `zhangsan`).
+Leave empty to allow all users in the enterprise who can message the app.
+
+### Visible Range
+
+In the app settings, configure **"Visible Range"** (可见范围) to control which departments/users can see the app. This is an additional layer of access control managed by WeChat Work itself.
+
+---
+
+## QQ Bot (QQ 官方机器人)
+
+### App ID and App Secret
+
+**How to create a QQ Bot and get credentials:**
+1. Go to [QQ Open Platform](https://q.qq.com/) and log in
+2. Click **"Create Bot"** (创建机器人)
+3. Fill in bot name, description, category → submit for review
+4. After approval, go to **"Development"** (开发) → **"Development Settings"** (开发设置)
+5. Find:
+   - **AppID** — displayed on the page
+   - **AppSecret** — click to reveal and copy
+
+### Required Configuration on QQ Open Platform
+
+1. Go to **"Development"** → **"Development Settings"**
+2. Under **"Message Event Subscriptions"** (消息事件订阅), enable:
+   - **Group @message** (群@消息) — `GROUP_AT_MESSAGE_CREATE`
+   - **C2C message** (C2C私聊消息) — `C2C_MESSAGE_CREATE`
+3. Under **"QQ Bot Sandbox"** (沙箱配置):
+   - Add test guilds/groups for sandbox testing
+   - Set `CTI_QQ_SANDBOX=true` while testing
+   - Switch to `CTI_QQ_SANDBOX=false` for production after bot is published
+
+### Sandbox Mode
+
+- Set `CTI_QQ_SANDBOX=true` to use the sandbox API (`sandbox.api.sgroup.qq.com`)
+- Set `CTI_QQ_SANDBOX=false` (default) for production API (`api.sgroup.qq.com`)
+- The bot must pass review before it can work in production mode
+
+### Allowed User IDs (optional)
+
+QQ user open IDs (format varies). Leave empty to allow all users who can message the bot.
+
+### Important Notes
+
+- In group chats, the bot only receives messages where it is **@mentioned** — this is enforced by the QQ platform
+- C2C (private) messages need to be explicitly enabled in the bot's settings on the QQ platform
+- The bot must pass QQ's review process before it can be used in production (non-sandbox) environments
+- QQ Bot API has rate limits on sending messages; the adapter handles passive replies (replying to received messages) which have higher limits
